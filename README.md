@@ -1,7 +1,8 @@
 <div align="center">
 
-# 🧟 Let Me In
+# 🏰 Let Me In
 **3D Tower Defense Minigame for Memizy**
+**🏰 Tower Defense × 📚 Quiz × 🎯 FPS**
 
 ![Version](https://img.shields.io/badge/Plugin-v0.1.0-blue?style=for-the-badge)
 ![Tech Stack](https://img.shields.io/badge/Three.js-Rapier3D-black?style=for-the-badge)
