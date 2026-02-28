@@ -9,6 +9,7 @@ This is a 3D web game combining **First-Person Shooter**, **Tower Defense**, and
 - **Physics:** `@dimforge/rapier3d-compat` — collisions, triggers, movement
 - **Controls:** Three.js `PointerLockControls` for FPS view
 - **Audio:** Howler.js via a custom `AudioService`
+- **Memizy Integration:** `@memizy/plugin-sdk` — handles the host ↔ plugin message protocol, standalone dev mode, and `?set=<url>` OQSE loading
 - **Build:** Vite
 
 ## 2. Architecture (Separation of Concerns)
@@ -100,7 +101,31 @@ Use **`THREE.Sprite` with `CanvasTexture`** — never `CSS3DRenderer`.
 - Audio assets live in `public/audio/sfx/` and `public/audio/music/`
 - `AudioControls.vue` exposes volume and mute controls to the player
 
-## 6. Coding Standards
+## 6. Memizy Plugin SDK Integration (`@memizy/plugin-sdk`)
+
+This plugin is a **Memizy ecosystem plugin**. It runs inside a sandboxed `<iframe>` in the Memizy Player host, or standalone during development.
+
+### Architecture
+- `src/services/MemizyService.ts` — singleton wrapper around `MemizyPlugin`. Initialised once in `App.vue` on mount; destroyed on unmount.
+- The SDK sends `PLUGIN_READY` automatically on construction. The host responds with `INIT_SESSION` containing OQSE items.
+- `MemizyService` converts incoming OQSE items into the internal `Question` format and delivers them to `useQuestionStore` via a registered callback.
+- **No raw `window.postMessage` calls anywhere in the codebase.** All host communication goes through the SDK methods exposed by `MemizyService`.
+
+### Item loading sources (handled automatically by the SDK)
+1. **Host iframe** — `INIT_SESSION` postMessage from the Memizy Player
+2. **`?set=<url>`** — OQSE JSON fetched from a URL query parameter (dev workflow)
+3. **Built-in standalone dialog** — Shadow DOM overlay where the developer can paste an OQSE URL
+4. **`useMockData()`** — programmatic mock data for testing
+
+### Message flow
+- `QuizModal` calls `reportAnswer()` / `startItemTimer()` for every user interaction
+- `GameView` calls `reportProgress()` after each answer, `reportPause()` on pause, and `reportComplete()` on game over / win / menu exit
+- `index.html` contains the required OQSE Application Manifest in a `<script type="application/oqse-manifest+json">` tag
+
+### Key principle
+The plugin is a **stateless UI layer** with respect to persistent data — it manages only transient visual/game state. The Memizy Host is the sole source of truth for SRS progress, Fuel, and study-set data. The plugin reports raw events (`ITEM_ANSWERED`, `PROGRESS_UPDATE`, `SESSION_COMPLETED`) and lets the host handle everything else.
+
+## 7. Coding Standards
 - Write clean, well-documented, type-safe TypeScript throughout
 - Follow SOLID principles and keep the ECS / store / UI layers strictly separated
 - All game logic stays in `src/game/`; all reactive state stays in `src/stores/`; all UI stays in `src/components/` and `src/views/`

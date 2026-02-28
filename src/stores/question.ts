@@ -1,4 +1,6 @@
 import { defineStore } from 'pinia'
+import { onMemizyQuestionsLoaded } from '../services/MemizyService'
+import type { Question as MemizyQuestion } from '../services/MemizyService'
 
 export interface Question {
   id: string
@@ -14,21 +16,21 @@ function validateQuestion(q: Question): string[] {
   const errors: string[] = []
   
   if (!q.text || q.text.trim().length === 0) {
-    errors.push('Text otázky nesmí být prázdný')
+    errors.push('Question text must not be empty')
   }
   
   if (!Array.isArray(q.choices) || q.choices.length < 2) {
-    errors.push('Musí být alespoň 2 odpovědi')
+    errors.push('At least 2 choices are required')
   }
   
   if (q.choices && q.choices.some(c => !c || c.trim().length === 0)) {
-    errors.push('Všechny odpovědi musí mít text')
+    errors.push('All choices must have text')
   }
   
   if (typeof q.correctIndex !== 'number' || 
       q.correctIndex < 0 || 
       q.correctIndex >= q.choices.length) {
-    errors.push('Neplatný index správné odpovědi')
+    errors.push('Invalid correct answer index')
   }
   
   return errors
@@ -64,7 +66,7 @@ export const useQuestionStore = defineStore('question', {
     addQuestion(question: Omit<Question, 'id'>) {
       const errors = validateQuestion(question as Question)
       if (errors.length) {
-        throw new Error(`Chyba validace: ${errors.join(', ')}`)
+        throw new Error(`Validation error: ${errors.join(', ')}`)
       }
       
       const newQuestion: Question = {
@@ -84,7 +86,7 @@ export const useQuestionStore = defineStore('question', {
       const updated = { ...this.questions[index], ...updates } as Question
       const errors = validateQuestion(updated)
       if (errors.length) {
-        throw new Error(`Chyba validace: ${errors.join(', ')}`)
+        throw new Error(`Validation error: ${errors.join(', ')}`)
       }
       
       this.questions[index] = updated
@@ -108,7 +110,7 @@ export const useQuestionStore = defineStore('question', {
       try {
         const data = JSON.parse(json)
         if (!Array.isArray(data)) {
-          throw new Error('JSON musí obsahovat pole otázek')
+          throw new Error('JSON must contain an array of questions')
         }
         
         const imported: Question[] = []
@@ -126,7 +128,7 @@ export const useQuestionStore = defineStore('question', {
         this.questions.push(...imported)
         return imported.length
       } catch (e) {
-        throw new Error('Chyba při importu: ' + (e as Error).message)
+        throw new Error('Import error: ' + (e as Error).message)
       }
     },
     
@@ -269,71 +271,30 @@ Pravidla:
       return this.questions[0] || null
     },
 
+    /**
+     * Register with the Memizy SDK service.
+     * The SDK handles PLUGIN_READY, INIT_SESSION, standalone mode,
+     * and the ?set=<url> workflow automatically.
+     */
     initMemizyListener() {
-      // Listen for INIT_SESSION from parent (Memizy host)
-      window.addEventListener('message', async (event) => {
-        try {
-          const { type, payload } = event.data
-          // Check for INIT_SESSION
-          if (type === 'INIT_SESSION') {
-             // Support both 'questions' and 'items' property in payload
-             const items = payload.questions || payload.items
-             if (Array.isArray(items) && items.length > 0) {
-                console.log('📥 Received questions via Memizy INIT_SESSION:', items.length)
-                
-                const imported: Question[] = []
-                for (const q of items) {
-                   // Adapt external format to internal Question interface
-                   let correctIndex = -1
-                   const choices = q.choices || q.options || []
-                   
-                   if (typeof q.correctIndex === 'number') {
-                     correctIndex = q.correctIndex
-                   } else if (q.answer && Array.isArray(choices)) {
-                     correctIndex = choices.findIndex((c: string) => c === q.answer)
-                   } 
-                   
-                   // Fallback logic if correct index not found but we have choices
-                   if (correctIndex === -1 && choices.length > 0) {
-                      // Try to find by content matching if answer is just content
-                      // If still -1, default to 0 to avoid breaking validators if strict
-                      correctIndex = 0 
-                   }
-
-                   const newQ: Question = {
-                      id: q.id || crypto.randomUUID(),
-                      text: q.text || q.question || '',
-                      choices: choices,
-                      correctIndex: correctIndex,
-                      category: q.category || 'General',
-                      difficulty: q.difficulty || 'medium',
-                      masteryLevel: q.masteryLevel ?? 0
-                   }
-
-                   // Validate using the local function
-                   const errors = validateQuestion(newQ)
-                   if (errors.length === 0) {
-                      imported.push(newQ)
-                   } else {
-                      console.warn('Skipping invalid question from host:', newQ, errors)
-                   }
-                }
-                
-                if (imported.length > 0) {
-                   this.questions = imported
-                   console.log(`✅ Successfully loaded ${imported.length} questions from host`)
-                }
-             }
+      onMemizyQuestionsLoaded((questions: MemizyQuestion[]) => {
+        // The SDK service already validated & converted OQSE items.
+        // Re-validate with our local validator just in case.
+        const valid: Question[] = []
+        for (const q of questions) {
+          const errors = validateQuestion(q)
+          if (errors.length === 0) {
+            valid.push(q)
+          } else {
+            console.warn('[QuestionStore] Skipping invalid SDK question', q.id, errors)
           }
-        } catch (e) {
-          console.error('Error processing message:', e)
+        }
+
+        if (valid.length > 0) {
+          this.questions = valid
+          console.log(`[QuestionStore] Loaded ${valid.length} questions from Memizy SDK`)
         }
       })
-
-      // Notify parent that we are ready to receive session data
-      if (window.parent !== window) {
-        window.parent.postMessage({ type: 'PLUGIN_READY' }, '*')
-      }
     }
   },
   

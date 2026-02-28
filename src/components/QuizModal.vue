@@ -80,6 +80,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import type { Question } from '../stores/question'
 import { audioService } from '../services/AudioService'
+import { reportAnswer, startItemTimer } from '../services/MemizyService'
 import { useGameStore } from '../stores/game'
 import { useQuestionStore } from '../stores/question'
 
@@ -120,19 +121,14 @@ const submitAnswer = (index: number) => {
   answered.value = true
   isCorrect.value = index === props.question.correctIndex
 
-  // Report to Memizy
-  if (window.parent !== window) {
-    const timeSpent = Date.now() - startTime.value
-    window.parent.postMessage({
-      type: 'ITEM_ANSWERED',
-      payload: {
-        itemId: props.question.id,
-        answer: props.question.choices[index],
-        timeSpent: timeSpent,
-        isCorrect: isCorrect.value
-      }
-    }, '*')
-  }
+  // Report to Memizy via SDK (timeSpent auto-inferred from startItemTimer)
+  const timeSpent = Date.now() - startTime.value
+  reportAnswer(
+    props.question.id,
+    isCorrect.value,
+    props.question.choices[index],
+    timeSpent,
+  )
   
   // Play sound based on result
   if (isCorrect.value) {
@@ -180,6 +176,11 @@ const resetQuestion = () => {
   
   // Request next question from parent
   props.onNextQuestion()
+
+  // Start SDK item timer for the new question (after onNextQuestion updates it)
+  if (props.question) {
+    startItemTimer(props.question.id)
+  }
 }
 
 const close = () => {
@@ -199,6 +200,8 @@ const handleKeyDown = (e: KeyboardEvent) => {
 
 onMounted(() => {
   window.addEventListener('keydown', handleKeyDown)
+  // Start SDK item timer for initial question
+  startItemTimer(props.question.id)
 })
 
 onUnmounted(() => {

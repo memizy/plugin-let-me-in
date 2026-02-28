@@ -3,14 +3,23 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { onMounted, onBeforeUnmount } from 'vue'
 import { useQuestionStore } from './stores/question'
+import { initMemizySDK, destroyMemizySDK } from './services/MemizyService'
 
 const questionStore = useQuestionStore()
 
 onMounted(() => {
-  // Initialize Memizy listener for question loading
+  // Initialise the Memizy SDK (handles PLUGIN_READY, INIT_SESSION,
+  // standalone mode, and ?set=<url> loading automatically).
+  initMemizySDK()
+
+  // Register the question store to receive items from the SDK.
   questionStore.initMemizyListener()
+})
+
+onBeforeUnmount(() => {
+  destroyMemizySDK()
 })
 </script>
 
