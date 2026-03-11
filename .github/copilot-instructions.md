@@ -101,29 +101,42 @@ Use **`THREE.Sprite` with `CanvasTexture`** — never `CSS3DRenderer`.
 - Audio assets live in `public/audio/sfx/` and `public/audio/music/`
 - `AudioControls.vue` exposes volume and mute controls to the player
 
-## 6. Memizy Plugin SDK Integration (`@memizy/plugin-sdk`)
+## 6. Memizy Plugin SDK Integration (`@memizy/plugin-sdk` v0.2.0)
 
 This plugin is a **Memizy ecosystem plugin**. It runs inside a sandboxed `<iframe>` in the Memizy Player host, or standalone during development.
 
 ### Architecture
 - `src/services/MemizyService.ts` — singleton wrapper around `MemizyPlugin`. Initialised once in `App.vue` on mount; destroyed on unmount.
-- The SDK sends `PLUGIN_READY` automatically on construction. The host responds with `INIT_SESSION` containing OQSE items.
+- The SDK sends `PLUGIN_READY` automatically on construction. The host responds with `INIT_SESSION` containing OQSE items and optionally existing `ProgressRecord` data.
 - `MemizyService` converts incoming OQSE items into the internal `Question` format and delivers them to `useQuestionStore` via a registered callback.
 - **No raw `window.postMessage` calls anywhere in the codebase.** All host communication goes through the SDK methods exposed by `MemizyService`.
 
 ### Item loading sources (handled automatically by the SDK)
 1. **Host iframe** — `INIT_SESSION` postMessage from the Memizy Player
 2. **`?set=<url>`** — OQSE JSON fetched from a URL query parameter (dev workflow)
-3. **Built-in standalone dialog** — Shadow DOM overlay where the developer can paste an OQSE URL
+3. **Floating ⚙ gear icon** — Shadow DOM settings panel injected by the SDK in standalone mode; allows loading a set via URL, pasted JSON, or `.oqse.json` file upload. Opens automatically when no other source is present.
 4. **`useMockData()`** — programmatic mock data for testing
 
-### Message flow
-- `QuizModal` calls `reportAnswer()` / `startItemTimer()` for every user interaction
-- `GameView` calls `reportProgress()` after each answer, `reportPause()` on pause, and `reportComplete()` on game over / win / menu exit
-- `index.html` contains the required OQSE Application Manifest in a `<script type="application/oqse-manifest+json">` tag
+### Message flow (v0.2.0 protocol)
+- `QuizModal` calls `reportAnswer()` / `startItemTimer()` for every user interaction; the SDK runs the **Leitner reducer** internally and sends `SYNC_PROGRESS` to the host automatically on every `answer()` call — no manual progress reporting needed.
+- `GameView` calls `reportExit()` on game over / win / menu exit — sends `EXIT_REQUEST` (replaced `SESSION_COMPLETED` from v0.1.x).
+- `index.html` contains the required OQSE Application Manifest in a `<script type="application/oqse-manifest+json">` tag.
+- `SESSION_PAUSED` / `PROGRESS_UPDATE` messages no longer exist in v0.2.0.
+
+### MemizyService public API
+| Function | Description |
+| :--- | :--- |
+| `initMemizySDK()` | Initialise the singleton (called in `App.vue` on mount) |
+| `destroyMemizySDK()` | Cleanup on app unmount |
+| `onMemizyQuestionsLoaded(cb)` | Register callback to receive converted questions |
+| `reportAnswer(itemId, isCorrect, answer?)` | Report answer — SDK sends `SYNC_PROGRESS` automatically |
+| `reportSkip(itemId)` | Report skipped item |
+| `reportExit(score?)` | Signal session end — sends `EXIT_REQUEST` |
+| `startItemTimer(itemId)` | Start per-item timer (time auto-included in `answer()`) |
+| `stopItemTimer(itemId)` | Stop timer and return elapsed ms |
 
 ### Key principle
-The plugin is a **stateless UI layer** with respect to persistent data — it manages only transient visual/game state. The Memizy Host is the sole source of truth for SRS progress, Fuel, and study-set data. The plugin reports raw events (`ITEM_ANSWERED`, `PROGRESS_UPDATE`, `SESSION_COMPLETED`) and lets the host handle everything else.
+The plugin is a **stateless UI layer** with respect to persistent data. The Memizy Host owns SRS progress, Fuel, and study-set data. The plugin reports raw events and the SDK handles Leitner SR calculations and `SYNC_PROGRESS` dispatch automatically.
 
 ## 7. Coding Standards
 - Write clean, well-documented, type-safe TypeScript throughout

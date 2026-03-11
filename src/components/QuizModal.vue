@@ -112,7 +112,6 @@ const cooldownActive = ref(false)
 const cooldownRemaining = ref(3)
 const reward = ref(0)
 let cooldownInterval: number | null = null
-const startTime = ref(Date.now())
 
 const submitAnswer = (index: number) => {
   if (answered.value || cooldownActive.value) return
@@ -121,13 +120,11 @@ const submitAnswer = (index: number) => {
   answered.value = true
   isCorrect.value = index === props.question.correctIndex
 
-  // Report to Memizy via SDK (timeSpent auto-inferred from startItemTimer)
-  const timeSpent = Date.now() - startTime.value
+  // Report to Memizy via SDK — timeSpent is inferred from startItemTimer()
   reportAnswer(
     props.question.id,
     isCorrect.value,
     props.question.choices[index],
-    timeSpent,
   )
   
   // Play sound based on result
@@ -172,7 +169,6 @@ const resetQuestion = () => {
   selectedIndex.value = -1
   isCorrect.value = false
   reward.value = 0
-  startTime.value = Date.now()
   
   // Request next question from parent
   props.onNextQuestion()

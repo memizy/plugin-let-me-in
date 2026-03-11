@@ -54,7 +54,7 @@ import { useGameStore } from '../stores/game'
 import { useQuestionStore } from '../stores/question'
 import { audioService } from '../services/AudioService'
 import { SaveSystem } from '../game/SaveSystem'
-import { reportComplete, reportProgress, reportPause } from '../services/MemizyService'
+import { reportExit } from '../services/MemizyService'
 import type { Question } from '../stores/question'
 
 const router = useRouter()
@@ -151,17 +151,10 @@ const handleQuizAnswer = (correct: boolean, reward: number) => {
     gameStore.incrementScore(reward) // Score = same as money reward
   }
   
-  // Report progress to Memizy host HUD
-  const totalQuestions = questionStore.questions.length
-  const masteredCount = questionStore.questions.filter(q => q.masteryLevel >= 100).length
-  if (totalQuestions > 0) {
-    reportProgress(masteredCount, totalQuestions)
-  }
-
   // Check if player achieved 100% mastery
   if (questionStore.averageMastery >= 100) {
-    // Signal completion to Memizy host
-    reportComplete(gameStore.score)
+    // Signal exit to Memizy host (v0.2.0: EXIT_REQUEST replaces SESSION_COMPLETED)
+    reportExit(gameStore.score)
     // Show Game Won modal
     showQuiz.value = false
     showGameWon.value = true
@@ -265,8 +258,8 @@ const restartGame = async () => {
 }
 
 const goToMenu = () => {
-  // Signal session complete to Memizy host via SDK
-  reportComplete(gameStore.score)
+  // Signal session exit to Memizy host via SDK (v0.2.0: EXIT_REQUEST)
+  reportExit(gameStore.score)
 
   if (game) {
     game.stop()
@@ -338,9 +331,6 @@ const triggerPause = () => {
   }
   
   console.log('⏸️ Triggering Pause')
-  
-  // Notify Memizy host about internal pause
-  reportPause()
   
   // Open pause menu
   showPause.value = true
