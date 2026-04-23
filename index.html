@@ -6,17 +6,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Let me in!</title>
     <script type="application/oqse-manifest+json">
-    {
-      "id": "https://memizy.com/plugins/let-me-in",
-      "name": "Let Me In!",
-      "version": "0.1.0",
-      "description": "A 3D FPS + Tower Defense + Quiz game where you defend a library by answering questions to earn money for towers.",
-      "author": "Memizy",
-      "license": "MIT",
-      "itemTypes": ["multiple_choice"],
-      "minItems": 2,
-      "features": ["shuffle", "masteryMode"]
-    }
+      {
+        "$schema": "https://cdn.jsdelivr.net/gh/memizy/oqse-specification@main/schemas/oqse-manifest-v0.1.json",
+        "version": "0.1",
+        "pluginVersion": "0.1.0",
+        "id": "https://memizy.github.io/plugin-let-me-in/",
+        "appName": "Let Me In!",
+        "description": "A 3D FPS + Tower Defense + Quiz game where you defend a library by answering questions to earn money for towers.",
+        "author": {
+          "name": "Memizy"
+        },
+        "license": "MIT",
+        "emoji": "🏰",
+        "studyMode": "game",
+        "questionDensity": "medium",
+        "capabilities": {
+          "actions": ["render"],
+          "types": ["mcq-single"]
+        }
+      }
     </script>
   </head>
   <body>
