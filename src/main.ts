@@ -9,5 +9,6 @@ const pinia = createPinia()
 
 app.use(pinia)
 app.use(router)
+router.push('/')
 
 app.mount('#app')
