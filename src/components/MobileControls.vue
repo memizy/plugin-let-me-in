@@ -10,7 +10,6 @@
       <div class="joystick-base">
         <div 
           class="joystick-stick" 
-          ref="moveJoystickStick"
           :style="{ transform: `translate(-50%, -50%) translate(${moveStick.x}px, ${moveStick.y}px)` }"
         ></div>
       </div>
@@ -22,7 +21,6 @@
       <div class="joystick-base">
         <div 
           class="joystick-stick" 
-          ref="lookJoystickStick"
           :style="{ transform: `translate(-50%, -50%) translate(${lookStick.x}px, ${lookStick.y}px)` }"
         ></div>
       </div>
@@ -111,11 +109,9 @@ const store = useGameStore()
 // Detect mobile
 const isMobile = ref(false)
 
-// Joystick refs
+// Joystick refs (container only — stick position is CSS via moveStick/lookStick)
 const moveJoystickContainer = ref<HTMLElement | null>(null)
-const moveJoystickStick = ref<HTMLElement | null>(null)
 const lookJoystickContainer = ref<HTMLElement | null>(null)
-const lookJoystickStick = ref<HTMLElement | null>(null)
 
 // Joystick state
 const moveStick = ref({ x: 0, y: 0 })
