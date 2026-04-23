@@ -9,11 +9,6 @@ const router = createRouter({
       component: () => import('../views/MenuView.vue')
     },
     {
-      path: '/editor',
-      name: 'editor',
-      component: () => import('../views/EditorView.vue')
-    },
-    {
       path: '/game',
       name: 'game',
       component: () => import('../views/GameView.vue')

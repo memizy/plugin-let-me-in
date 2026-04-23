@@ -37,11 +37,6 @@
           <span class="btn-text">{{ isLoading ? 'Načítam hru' : (hasSavedGame ? 'Nová Hra' : 'Spustit Hru') }}</span>
         </button>
         
-        <button @click="openEditor" class="menu-btn secondary">
-          <span class="icon">📝</span>
-          <span class="btn-text">Editor Otázek</span>
-        </button>
-        
         <button @click="showSettings = true" class="menu-btn secondary">
           <span class="icon">⚙️</span>
           <span class="btn-text">Nastavení</span>
@@ -53,7 +48,7 @@
           <div class="stat-icon">📚</div>
           <div class="stat-content">
             <div class="stat-value">{{ questionStore.questions.length }}</div>
-            <div class="stat-label">Otázky v databázi</div>
+            <div class="stat-label">Načtené otázky</div>
           </div>
         </div>
         
@@ -179,16 +174,7 @@ const continueGame = () => {
 }
 
 const startGame = () => {
-  if (questionStore.questions.length === 0) {
-    alert('Nejprve přidej alespoň jednu otázku v editoru!')
-    return
-  }
   router.push('/game')
-}
-
-const openEditor = () => {
-  audioService.play('button_click')
-  router.push('/editor')
 }
 
 const selectDifficulty = (difficulty: 'easy' | 'medium' | 'hard') => {

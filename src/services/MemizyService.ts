@@ -107,6 +107,7 @@ export async function initMemizySDK(): Promise<MemizySDK> {
     id: 'https://memizy.com/plugins/let-me-in',
     version: '0.1.0',
     debug: import.meta.env.DEV,
+    standaloneUiPosition: 'bottom-right',
   })
 
   connectPromise = (async () => {
