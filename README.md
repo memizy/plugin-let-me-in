@@ -12,6 +12,11 @@
 
 Defend the library from the zombie horde! An interactive, gamified study plugin for the [Memizy Ecosystem](https://github.com/memizy/memizy).
 
+<br>
+
+[![Play with Test Suite](https://img.shields.io/badge/🎮_Play-With_Test_Suite-2ea44f?style=for-the-badge)](https://memizy.github.io/plugin-let-me-in/?set=https://cdn.jsdelivr.net/gh/memizy/set-test-suite@main/data.oqse.json)
+[![Open Empty Sandbox](https://img.shields.io/badge/⚙️_Open-Empty_Sandbox-6e7681?style=for-the-badge)](https://memizy.github.io/plugin-let-me-in/)
+
 </div>
 
 ---
@@ -26,7 +31,7 @@ Instead of just flipping flashcards, you earn in-game currency by correctly answ
 * 🧊 **Full 3D Environment:** Powered by `three.js`.
 * 💥 **Physics Engine:** Realistic collisions using `@dimforge/rapier3d`.
 * 🔊 **Spatial Audio:** Immersive sound effects via `howler.js`.
-* 🧠 **OQSE Integration:** Seamlessly loads `mcq-single` and `flashcard` item types from the Memizy host application.
+* 🧠 **OQSE Integration:** Powered by the official `@memizy/plugin-sdk`, it seamlessly loads `mcq-single` item types from the Memizy host application and handles automatic cloud saves.
 
 ---
 
