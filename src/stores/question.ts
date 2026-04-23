@@ -296,7 +296,5 @@ Pravidla:
         }
       })
     }
-  },
-  
-  persist: true
+  }
 })

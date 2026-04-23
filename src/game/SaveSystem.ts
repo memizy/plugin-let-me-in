@@ -1,10 +1,16 @@
 /**
  * SaveSystem - Handles game state persistence
- * Saves entire game state including entities, towers, enemies, health, positions
+ *
+ * Saves entire game state including entities, towers, enemies, health, positions.
+ * Persistence is delegated to the Memizy SDK (cloud / host-backed) via
+ * `MemizyService.saveGameState` / `loadGameState`. The plugin sandbox forbids
+ * direct use of `localStorage` / `sessionStorage`, so the SDK is the only
+ * sanctioned persistence channel.
  */
 
 import type { useGameStore } from '../stores/game'
 import type { useQuestionStore } from '../stores/question'
+import { loadGameState, saveGameState } from '../services/MemizyService'
 
 export interface SavedGameState {
   version: string
@@ -65,17 +71,16 @@ export interface SavedGameState {
   }
 }
 
-const SAVE_KEY = 'td-quiz-game-save'
 const SAVE_VERSION = '1.0.0'
 
 export class SaveSystem {
   /**
-   * Check if a saved game exists
+   * Check if a saved game exists in the SDK-backed store.
    */
   static hasSavedGame(): boolean {
     try {
-      const saved = localStorage.getItem(SAVE_KEY)
-      return saved !== null
+      const saved = loadGameState<SavedGameState>()
+      return saved !== null && saved.version === SAVE_VERSION
     } catch (e) {
       console.error('Error checking saved game:', e)
       return false
@@ -83,14 +88,16 @@ export class SaveSystem {
   }
   
   /**
-   * Save current game state
-   * This is complex because we need to serialize the entire ECS state
+   * Save current game state.
+   * This is complex because we need to serialize the entire ECS state.
+   *
+   * Returns a promise that resolves to `true` on success.
    */
-  static saveGame(
+  static async saveGame(
     game: any, // Game instance
     gameStore: ReturnType<typeof useGameStore>,
     questionStore: ReturnType<typeof useQuestionStore>
-  ): boolean {
+  ): Promise<boolean> {
     try {
       const saveData: SavedGameState = {
         version: SAVE_VERSION,
@@ -180,10 +187,12 @@ export class SaveSystem {
         }
       }
       
-      localStorage.setItem(SAVE_KEY, JSON.stringify(saveData))
-      console.log('💾 Game saved successfully!', saveData)
-      return true
-      
+      const ok = await saveGameState(saveData)
+      if (ok) {
+        console.log('💾 Game saved successfully!', saveData)
+      }
+      return ok
+
     } catch (e) {
       console.error('Error saving game:', e)
       return false
@@ -191,25 +200,22 @@ export class SaveSystem {
   }
   
   /**
-   * Load saved game state
+   * Load saved game state from the SDK-backed store.
    */
   static loadGame(): SavedGameState | null {
     try {
-      const saved = localStorage.getItem(SAVE_KEY)
-      if (!saved) return null
-      
-      const data = JSON.parse(saved) as SavedGameState
-      
+      const data = loadGameState<SavedGameState>()
+      if (!data) return null
+
       // Version check
       if (data.version !== SAVE_VERSION) {
-        console.warn('Save version mismatch, clearing save')
-        this.clearSave()
+        console.warn('Save version mismatch, ignoring save')
         return null
       }
-      
+
       console.log('📂 Game loaded successfully!', data)
       return data
-      
+
     } catch (e) {
       console.error('Error loading game:', e)
       return null
@@ -217,26 +223,13 @@ export class SaveSystem {
   }
   
   /**
-   * Clear saved game
-   */
-  static clearSave(): void {
-    try {
-      localStorage.removeItem(SAVE_KEY)
-      console.log('🗑️ Save cleared')
-    } catch (e) {
-      console.error('Error clearing save:', e)
-    }
-  }
-  
-  /**
-   * Get save info without loading
+   * Get save info without loading the full state.
    */
   static getSaveInfo(): { timestamp: number; wave: number; score: number } | null {
     try {
-      const saved = localStorage.getItem(SAVE_KEY)
-      if (!saved) return null
-      
-      const data = JSON.parse(saved) as SavedGameState
+      const data = loadGameState<SavedGameState>()
+      if (!data || data.version !== SAVE_VERSION) return null
+
       return {
         timestamp: data.timestamp,
         wave: data.gameStore.currentWave,

@@ -21,27 +21,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref } from 'vue'
 import { audioService } from '../services/AudioService'
 
-// Načíst uložený stav z localStorage
-const musicMuted = ref(localStorage.getItem('musicMuted') === 'true')
-const sfxMuted = ref(localStorage.getItem('sfxMuted') === 'true')
-
-// Aplikovat uložený stav při načtení komponenty
-onMounted(() => {
-  if (musicMuted.value) {
-    audioService.setMusicVolume(0)
-  }
-  if (sfxMuted.value) {
-    audioService.setSFXVolume(0)
-  }
-})
+const musicMuted = ref(false)
+const sfxMuted = ref(false)
 
 const toggleMusic = () => {
   musicMuted.value = !musicMuted.value
-  localStorage.setItem('musicMuted', musicMuted.value.toString())
-  
+
   if (musicMuted.value) {
     audioService.setMusicVolume(0)
   } else {
@@ -51,8 +39,7 @@ const toggleMusic = () => {
 
 const toggleSFX = () => {
   sfxMuted.value = !sfxMuted.value
-  localStorage.setItem('sfxMuted', sfxMuted.value.toString())
-  
+
   if (sfxMuted.value) {
     audioService.setSFXVolume(0)
   } else {

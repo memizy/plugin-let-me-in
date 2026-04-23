@@ -9,13 +9,19 @@ import { initMemizySDK, destroyMemizySDK } from './services/MemizyService'
 
 const questionStore = useQuestionStore()
 
-onMounted(() => {
-  // Initialise the Memizy SDK (handles PLUGIN_READY, INIT_SESSION,
-  // standalone mode, and ?set=<url> loading automatically).
-  initMemizySDK()
-
-  // Register the question store to receive items from the SDK.
+onMounted(async () => {
+  // Register the question store BEFORE awaiting connect, so the
+  // callback is in place by the time the SDK pushes converted items.
   questionStore.initMemizyListener()
+
+  try {
+    // v0.3.x: connect() is async and performs the Penpal handshake
+    // (or spins up the standalone mock host). The namespaced managers
+    // are only available after it resolves.
+    await initMemizySDK()
+  } catch (err) {
+    console.error('[App] Failed to connect Memizy SDK', err)
+  }
 })
 
 onBeforeUnmount(() => {

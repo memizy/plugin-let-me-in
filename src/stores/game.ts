@@ -25,11 +25,7 @@ export const useGameStore = defineStore('game', {
     // Difficulty setting
     difficulty: 'easy' as 'easy' | 'medium' | 'hard'
   }),
-  
-  persist: {
-    paths: ['highScore', 'difficulty'] // Perzistuje highScore a difficulty
-  },
-  
+
   getters: {
     isPlayerAlive: (state) => state.playerHealth > 0,
     healthPercentage: (state) => (state.playerHealth / state.playerMaxHealth) * 100

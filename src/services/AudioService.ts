@@ -54,18 +54,6 @@ class AudioService {
   private currentGameTrack: 'ambient' | 'battle' = 'ambient'
   
   constructor() {
-    // Load saved volumes from localStorage
-    const savedMusicVolume = localStorage.getItem('musicVolume')
-    const savedSfxVolume = localStorage.getItem('sfxVolume')
-    
-    if (savedMusicVolume !== null) {
-      this.musicVolume = parseFloat(savedMusicVolume)
-    }
-    if (savedSfxVolume !== null) {
-      this.sfxVolume = parseFloat(savedSfxVolume)
-    }
-    
-    // Set global volume
     Howler.volume(1.0)
   }
   
@@ -353,15 +341,11 @@ stopMusic(fadeDuration: number = 1000): void {
   setMusicVolume(volume: number): void {
     this.musicVolume = Math.max(0, Math.min(1, volume))
     this.music.forEach(m => m.volume(this.musicVolume))
-    // Save to localStorage
-    localStorage.setItem('musicVolume', this.musicVolume.toString())
   }
-  
+
   setSFXVolume(volume: number): void {
     this.sfxVolume = Math.max(0, Math.min(1, volume))
     this.sounds.forEach(s => s.volume(this.sfxVolume))
-    // Save to localStorage
-    localStorage.setItem('sfxVolume', this.sfxVolume.toString())
   }
   
   /**

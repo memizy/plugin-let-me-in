@@ -175,10 +175,10 @@ const continueAfterWin = () => {
   // Pointer lock se automaticky zamkne díky watcheru (po kliknutí)
 }
 
-const saveAndExitAfterWin = () => {
+const saveAndExitAfterWin = async () => {
   // Save game before exiting
   if (game) {
-    const saved = SaveSystem.saveGame(game, gameStore, questionStore)
+    const saved = await SaveSystem.saveGame(game, gameStore, questionStore)
     if (saved) {
       console.log('✅ Game saved successfully')
     }
@@ -284,10 +284,10 @@ const resumeGame = () => {
   // Pointer lock se automaticky zamkne díky watcheru (po kliknutí)
 }
 
-const saveAndExit = () => {
+const saveAndExit = async () => {
   // Save game before exiting
   if (game) {
-    const saved = SaveSystem.saveGame(game, gameStore, questionStore)
+    const saved = await SaveSystem.saveGame(game, gameStore, questionStore)
     if (saved) {
       console.log('✅ Game saved from pause menu')
     }
